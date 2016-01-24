@@ -5,34 +5,133 @@
 #include <sys/resource.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <stdlib.h>
-
 #include "commandInfo.h"
 
-usage_info** executeCommand(char** exec, usage_info* status);
-
-int main(int argc, char** argv){
-
-	usage_info *ptr = get_init();
-	usage_info **ptr2 = executeCommand(argv+1, ptr);
-	ptr = ptr2[0];
-
-	print_info(ptr2[1]);
-}
-
-usage_info** executeCommand(char** exec, usage_info* status){
+usage_info** execute(char** exec, usage_info* status)
+{
 	struct rusage *r = (struct rusage*)(malloc(sizeof(struct rusage)));
+
 	int pid = fork();
-	if (pid == 0){ // this is the child process
-		int err = 0;
-		err = execvp(exec[0], exec);
-		if(err != 0){
-			printf("ERROR! ILLEGAL COMMAND ENTERED!\n");
-		}
+	inject_time(status);
+	if (pid == 0)
+	{ // this is the child process
+		execvp(exec[0], exec);
 	}
-	else{ // this is the parent process
+	else
+	{ // this is the parent process
 		wait(pid);
 		getrusage(RUSAGE_SELF, r);
 		return get_usage_info(r, status);
 	}
+}
+
+
+void inject_time(usage_info* inf)
+{
+	struct timeval t;
+	gettimeofday(&t, 0);
+	inf->wallClockTime = (long long)(t.tv_sec*1000 + t.tv_usec/1000);
+}
+
+char** split_args(char* buffer)
+{
+	char* clone = (char*)(malloc(128));
+	int   count = 0;
+	strncpy(clone, buffer, 128);
+
+	char* toks = strtok (clone," ");
+	while (toks != NULL)
+	{
+		count++;
+		toks = strtok (NULL, " ");
+	}
+	free(toks);
+
+	char** result = (char**)(malloc(sizeof(char*) * count));
+	char** writer = result;
+
+	toks = strtok (buffer," ");
+	while (toks != NULL)
+	{
+		*(writer++) = toks;
+		toks = strtok (NULL, " ");
+	}
+	free(toks);
+
+	return result;
+}
+
+int change_dir(char* dirname)
+{
+	char dir[1024];
+	if (dirname)
+	{
+		chdir(dirname);
+	}
+	else
+	{
+		chdir("/");
+	}
+
+	if (getcwd(dir, sizeof(dir)) != NULL)
+	{
+		printf("%s\n", dir);
+	}
+}
+
+int main(int argc, char*argv[])
+{
+	printf("~~$ ");
+	char* buffer = (char*)malloc(128);
+	int bufferspace = 0;
+	int exeunt = 0;
+	char c = 0;
+	usage_info *p = get_init();
+
+
+	while(exeunt == 0)
+	{
+		c = getchar();
+		if (c == '\n')
+		{
+			if (bufferspace != 0)
+            {
+                char** args = split_args(buffer);
+
+			    if (strcmp("exit", args[0]) == 0)
+			    {
+			    	exeunt = 1;
+			    }
+			    else if (strcmp("cd", args[0]) == 0)
+			    {
+			    	change_dir(args[1]);
+		    	}
+		    	else
+		    	{
+		    		usage_info **p2 = execute(args, p);
+		    		p = p2[0];
+		    		print_info(p2[1]);
+		    		free(p2);
+		    	}
+
+		    	memset(buffer, 0, 128);
+			    bufferspace = 0;
+            }
+            else
+            {
+                printf("~~$");
+            }
+        }
+        else if (c == EOF)
+        {
+            exeunt = 1;
+            printf("\n");
+        }
+		else
+		{
+			buffer[bufferspace++] = c;
+		}
+	}
+
+	return 0;
 }

@@ -3,6 +3,7 @@
 
 runCommand: runCommand.c commandInfo.c commandInfo.h
 	gcc -w -o runCommand runCommand.c commandInfo.c
+	#./runCommand
 
 clean:
 	rm -f *.o out.txt runCommand
