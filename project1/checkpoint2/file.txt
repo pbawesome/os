@@ -1,0 +1,5 @@
+cd dir1
+cd ..
+ls
+df -h
+
