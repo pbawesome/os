@@ -212,6 +212,33 @@ void run_command(char* commToExecute[], int background){
     }
 }
 
+char** split_args(char* buffer){
+    char* clone = (char*)(malloc(128));
+    int   count = 0;
+    strncpy(clone, buffer, 128);
+
+    char* toks = strtok (clone," ");
+    while (toks != NULL)
+    {
+        count++;
+        toks = strtok (NULL, " ");
+    }
+    free(toks);
+
+    char** result = (char**)(malloc(sizeof(char*) * count));
+    char** writer = result;
+
+    toks = strtok (buffer," ");
+    while (toks != NULL)
+    {
+        *(writer++) = toks;
+        toks = strtok (NULL, " ");
+    }
+    free(toks);
+
+    return result;
+}
+
 /*
  * Main function, user input for shell commands
  *
@@ -222,7 +249,10 @@ void run_command(char* commToExecute[], int background){
 int main(int argc, char *argv[]){
     // Run with given arguments, quit when complete
     if (argc > 1){
-        run_command(argv + 1, 0);
+        int i =0;
+        // char ** args = split_args(*argv);
+        // printf("%s LOLOLOLOLOL\n",*args);
+        // // run_command(args + 1, 0);
     }
     else{
         int exit_process = 0; // If exit has been requested
@@ -297,6 +327,7 @@ int main(int argc, char *argv[]){
                 }
                 else{
                      run_command(totTok, background);
+                     bgProcCheck();
                 }
             }
             input = NULL; // Reset input
