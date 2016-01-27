@@ -322,12 +322,12 @@ int main(int argc, char *argv[]){
                         bgProc* process = bgProcHead;
                         while (process != NULL){
                             printf("Job : %d, Process : %5d, Command : %s\n", process->job, process->pid, process->command);
+                            process = NULL;
                         }
                     }
                 }
                 else{
                      run_command(totTok, background);
-                     bgProcCheck();
                 }
             }
             input = NULL; // Reset input
